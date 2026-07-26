@@ -1,0 +1,30 @@
+# chaosnexus-anvil/chaoswrench.toml
+# Example ChaosNexus Anvil host config (safe for public repositories).
+# Copy to ~/.chaosnexus/anvil/chaosnexus-anvil.toml or chaoswrench.local.toml for local overrides.
+
+# Plugin scripts directory relative to the working directory when running Anvil.
+# In the Forgejo monorepo SSOT this is typically ../chaosnexus-scripts from chaosnexus-anvil/.
+scripts_dir = "../chaosnexus-scripts"
+
+# Instance nickname
+name = "ChaosNexus Anvil"
+
+# Maximum length for a proxy response in bytes (e.g., 10485760 for 10MB)
+# max_proxy_response_length = 10485760
+
+[plugin_permissions.check_server.data.network]
+
+[plugin_permissions.dataset_generator]
+fs_write = true
+fs_read = true
+
+# Example MCP server wiring (adjust paths for your install)
+# [mcp_servers.chaosnexus-codex]
+# command = "codex"
+# args = []
+# prefix = "chaosnexus-codex"
+
+# [mcp_servers.example_server]
+# command = "node"
+# args = ["index.js"]
+# prefix = "example"

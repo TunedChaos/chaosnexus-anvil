@@ -1,0 +1,32 @@
+# chaosnexus-anvil/packaging/aur/PKGBUILD
+# Maintainer: Tuned Chaos <lane@tunedchaos.com>
+#
+# DRAFT — not submitted to the AUR yet.
+# Local test against monorepo artifacts:
+#   just anvil-release
+#   cd chaosnexus-anvil/packaging/aur && makepkg -si
+#
+# Installs the ChaosNexus Anvil MCP CLI. Does NOT enable Codex embed-docs
+# or any documentation embedding; docs remain user-managed at runtime.
+
+pkgname=chaosnexus-anvil
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="ChaosNexus Anvil MCP engine (local Rhai plugin sandbox)"
+arch=('x86_64')
+url="https://chaosnexus.ai"
+license=('AGPL-3.0-or-later')
+depends=('openssl' 'gcc-libs' 'glibc')
+provides=("${pkgname}")
+conflicts=("${pkgname}")
+# Local file next to this PKGBUILD (symlink from artifacts/ — see README.md).
+# Replace with Codeberg release URL + real checksum when publishing to AUR.
+source=(
+  "${pkgname}-${pkgver}-x86_64-unknown-linux-gnu"
+)
+sha256sums=('SKIP')
+
+package() {
+  install -Dm755 "${srcdir}/${pkgname}-${pkgver}-x86_64-unknown-linux-gnu" \
+    "${pkgdir}/usr/bin/chaosnexus-anvil"
+}
