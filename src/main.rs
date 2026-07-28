@@ -370,11 +370,13 @@ async fn main() -> SdkResult<()> {
     base_config.load_instance_override(&instance_name);
     let config = Arc::new(base_config);
 
-    // `--scripts-dir` (used by ChaosNexus Forge) takes precedence over the config file.
+    // `--scripts-dir` (Forge) > config > CHAOSNEXUS_SCRIPTS_DIR (Suite) > monorepo defaults.
+    let suite_scripts = std::env::var("CHAOSNEXUS_SCRIPTS_DIR").ok();
     let scripts_dir_opt = args
         .scripts_dir
         .as_deref()
-        .or(config.scripts_dir.as_deref());
+        .or(config.scripts_dir.as_deref())
+        .or(suite_scripts.as_deref());
 
     let default_scripts_dir = directories::BaseDirs::new()
         .expect("Failed to get base dirs")
