@@ -127,7 +127,7 @@ fn register_database_features(engine: &mut Engine, n_ctx: &NativeContext) {
             let backend = conn.get_database_backend();
             let stmt = Statement::from_sql_and_values(backend, sql, values);
 
-            let res = run_async(async move { conn.execute(stmt).await });
+            let res = run_async(async move { conn.execute_raw(stmt).await });
 
             let exec_res = res.map_err(|e| format!("DB Execute error: {}", e))?;
             Ok(exec_res.rows_affected() as i64)
@@ -178,9 +178,13 @@ fn register_database_features(engine: &mut Engine, n_ctx: &NativeContext) {
         let host = parts.next().unwrap_or("127.0.0.1").to_string();
         let port = parts.next().and_then(|p| p.parse::<u16>().ok()).unwrap_or(2003);
         
-        let res = skytable::Connection::new(&host, port);
-        
-        let con = res.map_err(|e| format!("Skytable connect error: {}", e))?;
+        // Skytable 0.8 requires username/password via Config (Skyhash/2.0).
+        let username = std::env::var("SKYTABLE_USER").unwrap_or_else(|_| "root".to_string());
+        let password = std::env::var("SKYTABLE_PASS").unwrap_or_else(|_| String::new());
+        let config = skytable::Config::new(&host, port, &username, &password);
+        let con = config
+            .connect()
+            .map_err(|e| format!("Skytable connect error: {}", e))?;
         Ok(SkytableHandle { connection: Arc::new(tokio::sync::Mutex::new(con)) })
     });
     

@@ -9,39 +9,39 @@ name = "chaosnexus_anvil"
 path = "src/lib.rs"
 
 [dependencies]
-anyhow = "1.0.103"
-async-trait = "0.1.89"
+anyhow = "1.0.104"
+async-trait = "0.1.91"
 axum = "0.8.9"
-base64 = "0.22.1"
+base64 = "0.23.0"
 chrono = "0.4.45"
 chrono-tz = "0.10.4"
-clap = { version = "4.6.1", features = ["derive", "env"] }
+clap = { version = "4.6.5", features = ["derive", "env"] }
 directories = "6.0.0"
 dotenvy = "0.15.7"
-futures-util = "0.3.32"
+futures-util = "0.3.33"
 hex = "0.4.3"
 hmac = "0.13.0"
 md-5 = "0.11.0"
-notify = "6.1.1"
-redis = { version = "0.27", features = ["tokio-comp"], optional = true }
-regex = "1.12.4"
+notify = "8.2.0"
+redis = { version = "1.5", features = ["tokio-comp"], optional = true }
+regex = "1.13.1"
 reqwest = { version = "0.13.4", features = ["blocking", "json"] }
 polars = { version = "0.54.4", features = ["lazy", "sql", "csv", "json"], optional = true }
 rhai = { version = "1.25.1", features = ["serde", "sync", "metadata", "internals"] }
 rsntp = { version = "4.1.2", features = ["chrono"] }
-rust-mcp-axum = "0.2.3"
-rust-mcp-sdk = "0.10.0"
-rust-mcp-transport = "0.9.1"
-sea-orm = { version = "1.1.20", features = ["sqlx-sqlite", "sqlx-postgres", "sqlx-mysql", "runtime-tokio-rustls"], optional = true }
-serde = { version = "1.0.228", features = ["derive"] }
-serde_json = "1.0.150"
+rust-mcp-axum = "1.0.1"
+rust-mcp-sdk = "1.0.1"
+rust-mcp-transport = "1.0.0"
+sea-orm = { version = "2.0.0", features = ["sqlx-sqlite", "sqlx-postgres", "sqlx-mysql", "runtime-tokio-rustls"], optional = true }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
 sha2 = "0.11.0"
-skytable = { version = "0.7.4", features = ["sync"], optional = true }
+skytable = { version = "0.8.12", optional = true }
 sled = "0.34.7"
-tokio = { version = "1.52.3", features = ["full"] }
-tokio-tungstenite = { version = "0.29.0", features = ["rustls-tls-native-roots"] }
-toml = "1.1.2"
-uuid = { version = "1.23.4", features = ["v4"] }
+tokio = { version = "1.53.1", features = ["full"] }
+tokio-tungstenite = { version = "0.30.0", features = ["rustls-tls-native-roots"] }
+toml = "1.1.4"
+uuid = { version = "1.24.0", features = ["v4"] }
 rhai-ml = { path = "../vendor/rhai-ml", features = ["metadata"] }
 rhai-bigint = "0.1.9"
 rhai-sci = { version = "0.3.0", features = ["metadata"] }

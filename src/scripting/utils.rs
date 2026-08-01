@@ -7,7 +7,7 @@ pub fn rhai_array_to_sea_values(arr: rhai::Array) -> Vec<SeaValue> {
     arr.into_iter()
         .map(|d| {
             if d.is::<String>() {
-                SeaValue::String(Some(Box::new(d.cast::<String>())))
+                SeaValue::String(Some(d.cast::<String>()))
             } else if d.is::<i64>() {
                 SeaValue::BigInt(Some(d.cast::<i64>()))
             } else if d.is::<bool>() {
@@ -15,7 +15,7 @@ pub fn rhai_array_to_sea_values(arr: rhai::Array) -> Vec<SeaValue> {
             } else if d.is::<f64>() {
                 SeaValue::Double(Some(d.cast::<f64>()))
             } else {
-                SeaValue::String(Some(Box::new(d.to_string())))
+                SeaValue::String(Some(d.to_string()))
             }
         })
         .collect()
