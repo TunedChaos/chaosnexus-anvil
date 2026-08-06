@@ -15,7 +15,7 @@
 // constant (`push_constant`) so scripts cannot reassign it.
 
 use crate::scripting::capabilities::{Capability, CapabilitySet};
-use crate::scripting::models::{CVar, GLOBAL_CONTEXT};
+use crate::scripting::models::{CVar, global_context};
 use rhai::{Dynamic, Map, Scope};
 use std::collections::HashMap;
 
@@ -38,7 +38,7 @@ pub fn build_plugin_scope(plugin_name: &str) -> Scope<'static> {
 /// initialized (e.g. lightweight engine tests), so scripts can always rely on
 /// `CONFIG.cvars` / `CONFIG.secrets` existing.
 pub fn build_config_map(plugin_name: &str) -> Map {
-    let Some(ctx) = GLOBAL_CONTEXT.get() else {
+    let Some(ctx) = global_context() else {
         return build_config_map_from(plugin_name, &HashMap::new(), None, &HashMap::new());
     };
 

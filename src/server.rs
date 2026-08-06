@@ -642,7 +642,7 @@ impl ServerHandler for Handler {
 
         match params.name.as_str() {
             "cn_a_get_ide_connection_info" => {
-                if let Some(ctx) = crate::scripting::models::GLOBAL_CONTEXT.get()
+                if let Some(ctx) = crate::scripting::models::global_context()
                     && let Some((port, token)) = &ctx.ide_connection_info
                 {
                     return Ok(CallToolResult::text_content(vec![

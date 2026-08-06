@@ -283,10 +283,87 @@ fn test_net_allowlist_wildcard_permission_struct() {
         net_allowlist = ["*.github.com", "api.example.com"]
         http = ["GET", "POST"]
     "#;
-    let config: chaosnexus_anvil::config::Config = toml::from_str(toml).expect("parse config with net_allowlist");
+    let config: chaosnexus_anvil::config::Config =
+        toml::from_str(toml).expect("parse config with net_allowlist");
     let plugin_cfg = config.plugins.unwrap().remove("test_p").unwrap();
     let perms = plugin_cfg.permissions.unwrap();
-    
+
     let allowlist = perms.net_allowlist.unwrap();
     assert_eq!(allowlist, vec!["*.github.com", "api.example.com"]);
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn host_granted_capabilities_required_for_plugin_toml_caps() {
+    let _guard = TEST_SERIAL.lock().unwrap_or_else(|e| e.into_inner());
+    let root = shared_scripts_root();
+    let plugin_name = "cap_intersect";
+    cleanup_plugin(plugin_name);
+
+    let plugin_dir = root.join("plugins").join(plugin_name);
+    fs::create_dir_all(&plugin_dir).expect("plugin dir");
+    fs::write(
+        plugin_dir.join("plugin.toml"),
+        r#"
+name = "cap_intersect"
+version = "1.0.0"
+
+[capabilities]
+granted = ["shell", "net_http"]
+"#,
+    )
+    .expect("toml");
+    fs::write(
+        plugin_dir.join("cap_intersect_tool.rhai"),
+        "fn on_plugin_start() {}\nfn execute(tool_name, args) { \"ok\" }\n",
+    )
+    .expect("script");
+
+    let mut config = chaosnexus_anvil::config::Config::default();
+    let mut plugins = std::collections::HashMap::new();
+    plugins.insert(
+        plugin_name.to_string(),
+        chaosnexus_anvil::config::PluginConfig {
+            granted_capabilities: Some(vec!["shell".to_string()]),
+            permissions: Some(chaosnexus_anvil::config::Permissions {
+                shell: Some(vec!["echo".to_string()]),
+                ..Default::default()
+            }),
+            ..Default::default()
+        },
+    );
+    config.plugins = Some(plugins);
+
+    let pm = PluginManager::new(
+        root.to_string_lossy().as_ref(),
+        None,
+        None,
+        std::sync::Arc::new(config),
+    );
+    assert!(
+        pm.plugin_loaded(plugin_name),
+        "plugin with host granted_capabilities intersection must load"
+    );
+
+    cleanup_plugin(plugin_name);
+}
+
+#[test]
+fn plugin_toml_cannot_self_authorize_http_permissions() {
+    // Unknown keys / forged [permissions] in plugin.toml are ignored by PluginMeta
+    // and never appear in host Config.plugins (the only Permissions source).
+    let forged = r#"
+name = "sneaky"
+version = "1.0.0"
+
+[permissions]
+http = ["GET", "POST", "DELETE"]
+net_allowlist = ["*"]
+"#;
+    let meta: Result<chaosnexus_anvil::scripting::models::PluginMeta, _> = toml::from_str(forged);
+    assert!(meta.is_ok(), "unknown tables must not fail parse");
+    let host_default = chaosnexus_anvil::config::Config::default();
+    assert!(
+        host_default.plugins.is_none(),
+        "default host config must not inherit plugin-dir permissions"
+    );
 }

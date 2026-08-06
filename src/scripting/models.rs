@@ -51,8 +51,28 @@ use sea_orm::DatabaseConnection;
 type DatabaseConnection = ();
 use std::sync::{Arc, Mutex, RwLock};
 
-/// The globally accessible native context, used by module resolvers and synchronous event bridges.
-pub static GLOBAL_CONTEXT: std::sync::OnceLock<NativeContext> = std::sync::OnceLock::new();
+/// Process-wide native context used by Rhai natives and sync bridges.
+///
+/// Uses `RwLock` (not `OnceLock`) so `PluginManager::new` / `rebuild_from_disk`
+/// can replace the live handles. MCP registration writes into this slot; a
+/// stale OnceLock left the second manager with an empty tools map while natives
+/// still mutated the first context (tests and hot-reload).
+static GLOBAL_CONTEXT_SLOT: RwLock<Option<NativeContext>> = RwLock::new(None);
+
+/// Returns a clone of the current global `NativeContext`, if initialized.
+pub fn global_context() -> Option<NativeContext> {
+    GLOBAL_CONTEXT_SLOT
+        .read()
+        .ok()
+        .and_then(|guard| guard.clone())
+}
+
+/// Installs (or replaces) the process-wide native context for Rhai natives.
+pub fn set_global_context(ctx: NativeContext) {
+    if let Ok(mut slot) = GLOBAL_CONTEXT_SLOT.write() {
+        *slot = Some(ctx);
+    }
+}
 
 // Shared, thread-safe state aliases. These are defined once here (the canonical
 // home for scripting models) and re-used by both `NativeContext` and

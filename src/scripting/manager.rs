@@ -257,7 +257,9 @@ impl PluginManager {
             plugins: plugins_ref.clone(),
             ide_connection_info,
         };
-        let _ = crate::scripting::models::GLOBAL_CONTEXT.set(context.clone());
+        // Always replace so rebuild_from_disk / tests share the same tools map
+        // as Rhai natives that read the process-wide slot.
+        crate::scripting::models::set_global_context(context.clone());
         let engine = crate::scripting::engine::setup_engine(context);
         let engine_arc = Arc::new(engine);
 
@@ -742,12 +744,16 @@ impl PluginManager {
         self.tools.lock().unwrap().contains_key(name)
     }
 
+    /// Returns true when a discovered plugin finished loading (AST retained).
+    pub fn plugin_loaded(&self, name: &str) -> bool {
+        self.asts.lock().unwrap().contains_key(name)
+    }
+
     /// Stops all plugins and rebuilds the manager from the on-disk scripts root.
     pub fn rebuild_from_disk(&mut self) {
         let scripts_root = self.scripts_root().to_string_lossy().into_owned();
         let mcp_log_tx = self.mcp_log_tx.clone();
-        let ide_connection_info = crate::scripting::models::GLOBAL_CONTEXT
-            .get()
+        let ide_connection_info = crate::scripting::models::global_context()
             .and_then(|ctx| ctx.ide_connection_info.clone());
         let config = Arc::clone(&self.config);
         self.stop_all();

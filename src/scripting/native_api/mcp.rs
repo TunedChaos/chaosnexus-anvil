@@ -1,12 +1,12 @@
 // chaosnexus-anvil/src/scripting/native_api/mcp.rs
-use crate::scripting::models::{GLOBAL_CONTEXT, NativeContext};
+use crate::scripting::models::{NativeContext, global_context};
 use rhai::Engine;
 use rhai::plugin::*;
 use rust_mcp_sdk::schema::{Prompt, PromptArgument, Resource, Tool, ToolInputSchema};
 
 /// Verifies the identity of an MCP caller plugin.
 fn verify_mcp_caller_identity(plugin_name: &str) -> Result<(), Box<rhai::EvalAltResult>> {
-    let Some(ctx) = GLOBAL_CONTEXT.get() else {
+    let Some(ctx) = global_context() else {
         return Ok(());
     };
     let Some(current) = crate::scripting::plugin_context::current_plugin() else {
@@ -60,9 +60,9 @@ pub mod mcp_api {
     ) -> Result<rhai::Dynamic, Box<rhai::EvalAltResult>> {
         let plugin_name_owned = crate::scripting::plugin_context::current_plugin_name();
         let plugin_name = plugin_name_owned.as_str();
-        if let Some(ctx) = GLOBAL_CONTEXT.get() {
+        if let Some(ctx) = global_context() {
             verify_mcp_caller_identity(plugin_name)?;
-            let tool_name = enforce_prefix(plugin_name, tool_name, ctx);
+            let tool_name = enforce_prefix(plugin_name, tool_name, &ctx);
             let mut t_map = ctx.tools.lock().unwrap();
             if t_map.contains_key(&tool_name) {
                 return Err(format!("Collision: Tool '{}' already registered", tool_name).into());
@@ -113,10 +113,10 @@ pub mod mcp_api {
     ) -> Result<rhai::Dynamic, Box<rhai::EvalAltResult>> {
         let plugin_name_owned = crate::scripting::plugin_context::current_plugin_name();
         let plugin_name = plugin_name_owned.as_str();
-        if let Some(ctx) = GLOBAL_CONTEXT.get() {
+        if let Some(ctx) = global_context() {
             verify_mcp_caller_identity(plugin_name)?;
-            let resource_name = enforce_prefix(plugin_name, resource_name, ctx);
-            let uri = enforce_prefix(plugin_name, uri, ctx);
+            let resource_name = enforce_prefix(plugin_name, resource_name, &ctx);
+            let uri = enforce_prefix(plugin_name, uri, &ctx);
             let mut r_map = ctx.resources.lock().unwrap();
             if r_map.contains_key(&uri) {
                 return Err(format!("Collision: Resource URI '{}' already registered", uri).into());
@@ -158,9 +158,9 @@ pub mod mcp_api {
     ) -> Result<rhai::Dynamic, Box<rhai::EvalAltResult>> {
         let plugin_name_owned = crate::scripting::plugin_context::current_plugin_name();
         let plugin_name = plugin_name_owned.as_str();
-        if let Some(ctx) = GLOBAL_CONTEXT.get() {
+        if let Some(ctx) = global_context() {
             verify_mcp_caller_identity(plugin_name)?;
-            let prompt_name = enforce_prefix(plugin_name, prompt_name, ctx);
+            let prompt_name = enforce_prefix(plugin_name, prompt_name, &ctx);
             let mut p_map = ctx.prompts.lock().unwrap();
             if p_map.contains_key(&prompt_name) {
                 return Err(

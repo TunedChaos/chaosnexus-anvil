@@ -9,6 +9,51 @@ use crate::scripting::plugin_context::{
 };
 use crate::scripting::secrets::get_secret;
 use rhai::Engine;
+
+/// Resolves a translated phrase for the current plugin from the shared translation tree.
+fn translate_phrase(
+    ctx: &NativeContext,
+    phrase_key: &str,
+    locale: &str,
+    args: &rhai::Array,
+) -> String {
+    let plugin_name = crate::scripting::plugin_context::current_plugin_name();
+    let t = ctx.translations.read().unwrap();
+    let plugin_t_opt = t.get(&plugin_name).cloned();
+    drop(t); // Drop lock before string manipulation
+
+    let Some(plugin_t) = plugin_t_opt else {
+        let mut result = phrase_key.to_string();
+        for (i, arg) in args.iter().enumerate() {
+            let placeholder = format!("{{{}}}", i);
+            result = result.replace(&placeholder, &arg.to_string());
+        }
+        return result;
+    };
+
+    let phrase = if let Some(locale_t) = plugin_t.get(locale)
+        && let Some(p) = locale_t.get(phrase_key)
+    {
+        Some(p.clone())
+    } else if locale != "en"
+        && let Some(en_t) = plugin_t.get("en")
+        && let Some(p) = en_t.get(phrase_key)
+    {
+        Some(p.clone())
+    } else {
+        None
+    };
+
+    let mut result = phrase.unwrap_or_else(|| phrase_key.to_string());
+
+    for (i, arg) in args.iter().enumerate() {
+        let placeholder = format!("{{{}}}", i);
+        result = result.replace(&placeholder, &arg.to_string());
+    }
+
+    result
+}
+
 /// Registers core native functions with the Rhai engine.
 pub fn register(engine: &mut Engine, n_ctx: &NativeContext) {
     engine.register_fn(
@@ -118,11 +163,20 @@ pub fn register(engine: &mut Engine, n_ctx: &NativeContext) {
     engine.register_fn("log_info", |ctx: rhai::NativeCallContext, msg: &str| {
         write_log(ctx.fn_source().unwrap_or("Rhai"), "INFO", msg);
     });
+    engine.register_fn("log_info", |tag: &str, msg: &str| {
+        write_log(tag, "INFO", msg);
+    });
     engine.register_fn("log_warn", |ctx: rhai::NativeCallContext, msg: &str| {
         write_log(ctx.fn_source().unwrap_or("Rhai"), "WARN", msg);
     });
+    engine.register_fn("log_warn", |tag: &str, msg: &str| {
+        write_log(tag, "WARN", msg);
+    });
     engine.register_fn("log_error", |ctx: rhai::NativeCallContext, msg: &str| {
         write_log(ctx.fn_source().unwrap_or("Rhai"), "ERROR", msg);
+    });
+    engine.register_fn("log_error", |tag: &str, msg: &str| {
+        write_log(tag, "ERROR", msg);
     });
 
 
@@ -142,41 +196,34 @@ pub fn register(engine: &mut Engine, n_ctx: &NativeContext) {
     engine.register_fn(
         "translate",
         move |phrase_key: &str, locale: &str, args: rhai::Array| -> String {
-            let plugin_name = crate::scripting::plugin_context::current_plugin_name();
-            let t = ctx.translations.read().unwrap();
-            let plugin_t_opt = t.get(&plugin_name).cloned();
-            drop(t); // Drop lock before string manipulation
-
-            let Some(plugin_t) = plugin_t_opt else {
-                let mut result = phrase_key.to_string();
-                for (i, arg) in args.iter().enumerate() {
-                    let placeholder = format!("{{{}}}", i);
-                    result = result.replace(&placeholder, &arg.to_string());
-                }
-                return result;
-            };
-
-            let phrase = if let Some(locale_t) = plugin_t.get(locale)
-                && let Some(p) = locale_t.get(phrase_key)
+            translate_phrase(&ctx, phrase_key, locale, &args)
+        },
+    );
+    // 4-arg overload used by bundled examples: translate(plugin, key, locale, args).
+    // Plugin name is identity-checked; lookup still uses CURRENT_PLUGIN translations.
+    let ctx = n_ctx.clone();
+    engine.register_fn(
+        "translate",
+        move |plugin_name: &str,
+              phrase_key: &str,
+              locale: &str,
+              args: rhai::Array|
+              -> Result<String, Box<rhai::EvalAltResult>> {
+            if let Some(current) = crate::scripting::plugin_context::current_plugin()
+                && current != plugin_name
             {
-                Some(p.clone())
-            } else if locale != "en"
-                && let Some(en_t) = plugin_t.get("en")
-                && let Some(p) = en_t.get(phrase_key)
-            {
-                Some(p.clone())
-            } else {
-                None
-            };
-
-            let mut result = phrase.unwrap_or_else(|| phrase_key.to_string());
-
-            for (i, arg) in args.iter().enumerate() {
-                let placeholder = format!("{{{}}}", i);
-                result = result.replace(&placeholder, &arg.to_string());
+                let caller_caps = crate::scripting::plugin_context::capabilities_for(
+                    &ctx.plugin_capabilities,
+                    &current,
+                );
+                crate::scripting::plugin_context::verify_plugin_identity(
+                    plugin_name,
+                    &caller_caps,
+                    crate::scripting::capabilities::Capability::FsCrossPlugin,
+                )
+                .map_err(|e: String| -> Box<rhai::EvalAltResult> { e.into() })?;
             }
-
-            result
+            Ok(translate_phrase(&ctx, phrase_key, locale, &args))
         },
     );
 

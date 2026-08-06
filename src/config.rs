@@ -163,6 +163,11 @@ impl Config {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fs;
+    use std::sync::Mutex;
+
+    /// Serialize HOME-mutating path-cascade tests so parallel cargo test workers do not clash.
+    static HOME_LOCK: Mutex<()> = Mutex::new(());
 
     #[test]
     fn test_config_merging_overrides_permissions() {
@@ -195,5 +200,168 @@ mod tests {
 
         assert!(plugins.contains_key("allowed_plugin"));
         assert!(!plugins.contains_key("unauthorized_plugin"));
+    }
+
+    /// Instance override replaces host permissions for the same plugin key (later wins).
+    #[test]
+    fn test_instance_merge_widens_http_methods() {
+        let mut global: Config = toml::from_str(
+            r#"
+            [plugins.demo.permissions]
+            http = ["GET"]
+            "#,
+        )
+        .unwrap();
+        let instance: Config = toml::from_str(
+            r#"
+            [plugins.demo.permissions]
+            http = ["GET", "POST"]
+            "#,
+        )
+        .unwrap();
+        global.merge(instance);
+        let http = global
+            .plugins
+            .as_ref()
+            .unwrap()
+            .get("demo")
+            .unwrap()
+            .permissions
+            .as_ref()
+            .unwrap()
+            .http
+            .as_ref()
+            .unwrap();
+        assert_eq!(http, &vec!["GET".to_string(), "POST".to_string()]);
+    }
+
+    /// Omitting `permissions` in an override must not clear the global grant (shallow merge).
+    #[test]
+    fn test_merge_omitting_permissions_preserves_global() {
+        let mut global: Config = toml::from_str(
+            r#"
+            [plugins.demo.permissions]
+            http = ["GET"]
+            "#,
+        )
+        .unwrap();
+        let instance: Config = toml::from_str(
+            r#"
+            name = "instance-only"
+            "#,
+        )
+        .unwrap();
+        global.merge(instance);
+        assert_eq!(global.name.as_deref(), Some("instance-only"));
+        let http = global
+            .plugins
+            .as_ref()
+            .unwrap()
+            .get("demo")
+            .unwrap()
+            .permissions
+            .as_ref()
+            .unwrap()
+            .http
+            .as_ref()
+            .unwrap();
+        assert_eq!(http, &vec!["GET".to_string()]);
+    }
+
+    /// Global → CLI → instance path cascade via real files under a temp HOME.
+    #[test]
+    fn test_load_base_and_instance_path_cascade() {
+        let _guard = HOME_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        let tmp = std::env::temp_dir().join(format!(
+            "cn_anvil_cfg_{}_{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let home = tmp.join("home");
+        let anvil_global = home.join(".chaosnexus").join("anvil");
+        let instance_dir = anvil_global.join("ci");
+        fs::create_dir_all(&anvil_global).unwrap();
+        fs::create_dir_all(&instance_dir).unwrap();
+
+        fs::write(
+            anvil_global.join("chaosnexus-anvil.toml"),
+            r#"
+            name = "global"
+            [plugins.demo.permissions]
+            http = ["GET"]
+            "#,
+        )
+        .unwrap();
+
+        let cli_path = tmp.join("cli.toml");
+        fs::write(
+            &cli_path,
+            r#"
+            name = "cli"
+            [plugins.demo.permissions]
+            http = ["GET", "HEAD"]
+            "#,
+        )
+        .unwrap();
+
+        fs::write(
+            instance_dir.join("chaosnexus-anvil.toml"),
+            r#"
+            name = "instance"
+            [plugins.demo.permissions]
+            http = ["GET", "POST"]
+            "#,
+        )
+        .unwrap();
+
+        let prev_home = std::env::var_os("HOME");
+        // SAFETY: serialized by HOME_LOCK; restored before unlock.
+        unsafe {
+            std::env::set_var("HOME", &home);
+        }
+
+        let mut cfg = Config::load_base(Some(cli_path.to_str().unwrap())).expect("load_base");
+        assert_eq!(cfg.name.as_deref(), Some("cli"));
+        let http_after_cli = cfg
+            .plugins
+            .as_ref()
+            .unwrap()
+            .get("demo")
+            .unwrap()
+            .permissions
+            .as_ref()
+            .unwrap()
+            .http
+            .as_ref()
+            .unwrap();
+        assert_eq!(http_after_cli, &vec!["GET".to_string(), "HEAD".to_string()]);
+
+        cfg.load_instance_override("ci");
+        assert_eq!(cfg.name.as_deref(), Some("instance"));
+        let http_after_instance = cfg
+            .plugins
+            .as_ref()
+            .unwrap()
+            .get("demo")
+            .unwrap()
+            .permissions
+            .as_ref()
+            .unwrap()
+            .http
+            .as_ref()
+            .unwrap();
+        assert_eq!(
+            http_after_instance,
+            &vec!["GET".to_string(), "POST".to_string()]
+        );
+
+        match prev_home {
+            Some(h) => unsafe { std::env::set_var("HOME", h) },
+            None => unsafe { std::env::remove_var("HOME") },
+        }
+        let _ = fs::remove_dir_all(&tmp);
     }
 }
