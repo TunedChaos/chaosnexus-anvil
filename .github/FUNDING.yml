@@ -1,4 +1,8 @@
-# GitHub Sponsors (solo-maintained OSS — no SLA)
+# .github/FUNDING.yml
+# GitHub Sponsors + Stripe Payment Links (public host).
 github: [TunedChaos]
 custom:
-  - "https://chaosnexus.ai/guide/support"
+  - "https://buy.stripe.com/aFa4gz7V09ff0e5cmA0x200"
+  - "https://buy.stripe.com/bJe8wP3EKajj9OFdqE0x201"
+  - "https://buy.stripe.com/4gM5kD2AGajj8KB3Q40x202"
+  - "https://buy.stripe.com/6oUeVdcbg4YZ8KBeuI0x203"
