@@ -1,0 +1,28 @@
+# chaosnexus-anvil/chaoswrench.toml
+# Example ChaosNexus Anvil host config (safe for public repositories).
+# Copy to ~/.chaosnexus/anvil/chaosnexus-anvil.toml or chaosnexus-anvil.local.toml for local overrides.
+# Schema: [plugins.<name>] + granted_capabilities + permissions.*  (not [plugin_permissions.*]).
+
+scripts_dir = "../chaosnexus-scripts"
+name = "ChaosNexus Anvil"
+
+# max_proxy_response_length = 10485760
+
+[plugins.check_server]
+granted_capabilities = ["net_http"]
+
+[plugins.check_server.permissions]
+http = ["GET"]
+net_allowlist = ["example.com"]
+
+[plugins.dataset_generator]
+granted_capabilities = ["fs_read", "fs_write"]
+
+[plugins.dataset_generator.permissions]
+# Path jail is Landlock + scripts_dir; grant capability ids only here.
+
+# Example MCP server wiring (adjust paths for your install)
+# [mcp_servers.chaosnexus-codex]
+# command = "codex"
+# args = []
+# prefix = "chaosnexus-codex"

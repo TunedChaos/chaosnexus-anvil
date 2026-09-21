@@ -1,0 +1,13 @@
+# Binary and media assets
+*.webm -text
+*.png -text
+*.jpg -text
+*.jpeg -text
+*.svg -text
+*.ico -text
+
+# Compiled libraries and executables
+*.dll -text
+*.so -text
+*.exe -text
+*.dylib -text

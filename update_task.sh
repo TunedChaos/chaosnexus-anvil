@@ -1,0 +1,2 @@
+sed -i 's/- \[/\] Phase 1: \`chaosnexus-anvil\`/- \[x\] Phase 1: \`chaosnexus-anvil\`/g' ../.gemini/antigravity/brain/c830208a-356b-4ee1-9e61-4e0eb417dcaf/task.md
+sed -i 's/- \[/\] Audit \`core.rs\`, \`mcp.rs\`, \`mcp_client.rs\`, \`http.rs\`, \`db.rs\`, \`fs.rs\`, \`plugin_context.rs\`/- \[x\] Audit \`core.rs\`, \`mcp.rs\`, \`mcp_client.rs\`, \`http.rs\`, \`db.rs\`, \`fs.rs\`, \`plugin_context.rs\`/g' ../.gemini/antigravity/brain/c830208a-356b-4ee1-9e61-4e0eb417dcaf/task.md
