@@ -1,10 +1,10 @@
 # chaosnexus-anvil/packaging/aur/PKGBUILD
 # Maintainer: Tuned Chaos <lane@tunedchaos.com>
 #
-# DRAFT — not submitted to the AUR yet.
+# DRAFT - not submitted to the AUR yet.
 # Local test against workspace artifacts:
-#   just anvil-release
-#   cd chaosnexus-anvil/packaging/aur && makepkg -si
+#  just anvil-release
+#  cd chaosnexus-anvil/packaging/aur && makepkg -si
 #
 # Installs the ChaosNexus Anvil MCP CLI. Does NOT enable Codex embed-docs
 # or any documentation embedding; docs remain user-managed at runtime.
@@ -19,7 +19,7 @@ license=('AGPL-3.0-or-later')
 depends=('openssl' 'gcc-libs' 'glibc')
 provides=("${pkgname}")
 conflicts=("${pkgname}")
-# Local file next to this PKGBUILD (symlink from artifacts/ — see README.md).
+# Local file next to this PKGBUILD (symlink from artifacts/ - see README.md).
 # Replace with GitHub release URL + real checksum when publishing to AUR.
 source=(
   "${pkgname}-${pkgver}-x86_64-unknown-linux-gnu"
@@ -28,5 +28,5 @@ sha256sums=('SKIP')
 
 package() {
   install -Dm755 "${srcdir}/${pkgname}-${pkgver}-x86_64-unknown-linux-gnu" \
-    "${pkgdir}/usr/bin/chaosnexus-anvil"
+  "${pkgdir}/usr/bin/chaosnexus-anvil"
 }
