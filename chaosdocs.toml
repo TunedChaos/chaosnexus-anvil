@@ -1,0 +1,18 @@
+# ChaosNexus Codex Configuration
+# This file tells chaosnexus-codex which documentation repositories to fetch and serve.
+
+# storage_path = "~/.local/share/chaosnexus-codex/data" # Uncomment to override the default storage path.
+
+# Example: TypeScript
+# [[libraries]]
+# repo_url = "https://github.com/microsoft/TypeScript-Website.git"
+# sub_dir = "packages/documentation/copy/en"
+# dst_folder = "typescript"
+# use_sparse = false
+
+# Example: Rhai
+# [[libraries]]
+# repo_url = "https://github.com/rhaiscript/rhai-book.git"
+# sub_dir = "src"
+# dst_folder = "rhai"
+# use_sparse = false

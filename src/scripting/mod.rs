@@ -1,0 +1,20 @@
+/// Scripting module for ChaosNexus Anvil.
+pub mod capabilities;
+pub mod config_inject;
+pub mod cvars;
+pub mod engine;
+pub mod graph;
+pub mod kv_store;
+pub mod lib_module_resolver;
+pub mod manager;
+pub mod models;
+pub mod native_api;
+pub mod paths;
+pub mod plugin_context;
+pub mod sandbox;
+pub mod scaffold;
+pub mod schema;
+pub mod secrets;
+pub mod shell_exec;
+pub mod trace;
+pub mod utils;

@@ -1,0 +1,8 @@
+name = "test_plugin"
+version = "0.1.0"
+author = "ChaosNexus Forge User"
+description = "Test plugin description"
+
+[dependencies]
+
+[cvars]
